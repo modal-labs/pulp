@@ -79,18 +79,7 @@ impl Vaes {
 mod tests {
 	use super::*;
 
-	#[test]
-	fn aesenc_matches_reference() {
-		let Some(((aes, sse2), (vaes, avx512f))) = Aes::try_new()
-			.zip(Sse2::try_new())
-			.zip(Vaes::try_new().zip(Avx512f::try_new()))
-		else {
-			return;
-		};
-
-		// Same 128-bit block and round key in every lane.
-		let a = [0x10u8; 16];
-		let k = [0x5Au8; 16];
+	fn aesenc_reference(aes: Aes, sse2: Sse2, a: [u8; 16], k: [u8; 16]) -> [u8; 16] {
 		let a128 = unsafe { arch::_mm_loadu_si128(a.as_ptr() as *const __m128i) };
 		let k128 = unsafe { arch::_mm_loadu_si128(k.as_ptr() as *const __m128i) };
 		let mut want = [0u8; 16];
@@ -100,6 +89,20 @@ mod tests {
 				aes._mm_aesenc_si128(a128, k128),
 			);
 		}
+		want
+	}
+
+	#[test]
+	fn aesenc256_matches_reference() {
+		let Some(((aes, sse2), vaes)) = Aes::try_new().zip(Sse2::try_new()).zip(Vaes::try_new())
+		else {
+			return;
+		};
+
+		// Same 128-bit block and round key in every lane.
+		let a = [0x10u8; 16];
+		let k = [0x5Au8; 16];
+		let want = aesenc_reference(aes, sse2, a, k);
 
 		let a256 = a.repeat(2);
 		let k256 = k.repeat(2);
@@ -114,6 +117,21 @@ mod tests {
 		};
 		assert_eq!(&got256[..16], want);
 		assert_eq!(&got256[16..], want);
+	}
+
+	#[test]
+	fn aesenc512_matches_reference() {
+		let Some(((aes, sse2), (vaes, avx512f))) = Aes::try_new()
+			.zip(Sse2::try_new())
+			.zip(Vaes::try_new().zip(Avx512f::try_new()))
+		else {
+			return;
+		};
+
+		// Same 128-bit block and round key in every lane.
+		let a = [0x10u8; 16];
+		let k = [0x5Au8; 16];
+		let want = aesenc_reference(aes, sse2, a, k);
 
 		let a512 = a.repeat(4);
 		let k512 = k.repeat(4);
