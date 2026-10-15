@@ -375,6 +375,7 @@ mod gate_v4 {
 #[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 pub use gate_v4::*;
 
+mod aes;
 mod avx;
 mod avx2;
 mod f16c;
@@ -407,3 +408,6 @@ mod avx512ifma;
 #[cfg(feature = "x86-v4")]
 #[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 mod avx512vbmi2;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod vaes;
